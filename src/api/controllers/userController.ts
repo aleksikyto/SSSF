@@ -55,7 +55,7 @@ const userPost = async (
 
     const user = req.body;
     const hashedPassword = bcrypt.hashSync(user.password, salt);
-    console.log('dataa', user);
+
     const result = await addUser({
       ...user,
       password: hashedPassword,
