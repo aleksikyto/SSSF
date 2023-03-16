@@ -32,11 +32,18 @@ const getUser = async (userId: string): Promise<User> => {
 };
 
 // TODO: create addUser function
+// how to make it function using sql's own default  value?
 const addUser = async (data: PostUser) => {
-  const [headers] = await promisePool.execute<ResultSetHeader>(
-    'INSERT INTO sssf_user (user_name, email, role, password) VALUES (?, ?, ?, ?)',
-    [data.user_name, data.email, data.role, data.password]
-  );
+  const [headers] =
+    data.role !== undefined
+      ? await promisePool.execute<ResultSetHeader>(
+          'INSERT INTO sssf_user (user_name, email, role, password) VALUES (?, ?, ?, ?)',
+          [data.user_name, data.email, data?.role, data.password]
+        )
+      : await promisePool.execute<ResultSetHeader>(
+          'INSERT INTO sssf_user (user_name, email, role, password) VALUES (?, ?, ?, ?)',
+          [data.user_name, data.email, 'user', data.password]
+        );
   if (headers.affectedRows === 0) {
     throw new CustomError('Could not add user', 500);
   }

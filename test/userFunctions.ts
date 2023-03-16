@@ -50,7 +50,7 @@ const getSingleUser = (url: string | Function, id: number): Promise<User> => {
 
 const postUser = (
   url: string | Function,
-  user: Omit<User, 'user_id'>
+  user: Omit<User, 'user_id' | 'role'>
 ): Promise<UserWithToken> => {
   return new Promise((resolve, reject) => {
     request(url)
