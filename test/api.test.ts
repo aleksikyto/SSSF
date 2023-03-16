@@ -50,6 +50,7 @@ describe('GET /api/v1', () => {
       user_name: 'Test User ' + new Date().toLocaleDateString('fi-FI'),
       email: 'test@user.fi',
       password: 'asdfQEWR1234',
+      role: 'user',
     });
   });
 

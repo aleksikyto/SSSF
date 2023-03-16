@@ -4,7 +4,6 @@ import {
   getAllCats,
   getCat,
   updateCat,
-  getCatsByUser,
 } from '../models/catModel';
 import {Request, Response, NextFunction} from 'express';
 import {Cat, PostCat} from '../../interfaces/Cat';
@@ -22,7 +21,11 @@ const catListGet = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-const catGet = async (req: Request, res: Response, next: NextFunction) => {
+const catGet = async (
+  req: Request<{id: number}, {}, {}>,
+  res: Response,
+  next: NextFunction
+) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const messages: string = errors
@@ -48,6 +51,44 @@ const catGet = async (req: Request, res: Response, next: NextFunction) => {
 // catPost should use req.file to get filename
 // catPost should use res.locals.coords to get lat and lng (see middlewares.ts)
 // catPost should use req.user to get user_id and role
+const catPost = async (
+  req: Request<{}, {}, PostCat>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const messages: string = errors
+        .array()
+        .map((error) => `${error.msg}: ${error.param}`)
+        .join(', ');
+      throw new CustomError(messages, 400);
+    }
+    const cat = req.body;
+    const coords = res.locals.coords;
+    const user = req.user as User;
+    const file = req.file;
+
+    const result = await addCat({
+      ...cat,
+      lat: coords[0],
+      lng: coords[1],
+      owner: user.user_id,
+      filename: file?.filename || '',
+    });
+
+    if (result) {
+      const message: MessageResponse = {
+        message: 'cat added',
+        id: result,
+      };
+      res.json(message);
+    }
+  } catch (error) {
+    next(error);
+  }
+};
 
 const catPut = async (
   req: Request<{id: string}, {}, Cat>,
@@ -69,8 +110,8 @@ const catPut = async (
     const id = parseInt(req.params.id);
     const cat = req.body;
     const result = await updateCat(
-      cat,
       id,
+      cat,
       (req.user as User).user_id,
       (req.user as User).role
     );
@@ -89,5 +130,33 @@ const catPut = async (
 // TODO: create catDelete function to delete cat
 // catDelete should use deleteCat function from catModel
 // catDelete should use validationResult to validate req.params.id
+const catDelete = async (
+  req: Request<{id: string}, {}, {}>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      const messages = errors
+        .array()
+        .map((error) => `${error.msg}: ${error.param}`)
+        .join(', ');
+      throw new CustomError(messages, 400);
+    }
+
+    const id = parseInt(req.params.id);
+    const result = await deleteCat(id);
+    if (result) {
+      res.json({
+        message: 'cat was deleted',
+        id: id,
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
 
 export {catListGet, catGet, catPost, catPut, catDelete};
